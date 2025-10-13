@@ -15,8 +15,9 @@ A JavaFX desktop application that simulates autonomous faction behavior in a D&D
 - SQLite
 - Maven
 
-## 📸 Screenshots
-[Add screenshots here when you have time]
+## 📸 Screen
+<img width="1199" height="834" alt="Screenshot 2025-10-13 at 22 30 51" src="https://github.com/user-attachments/assets/a4234f14-ff11-46f0-896a-785486a44bca" />
+shots`
 
 ## 🚀 How to Run
 ```bash
