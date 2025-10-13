@@ -16,6 +16,9 @@ public class Main extends Application {
     private SimulationEngine simulationEngine;
     private FactionOverviewPanel factionPanel;
     private EventLogPanel eventLogPanel;
+    private PlayerInfluencePanel playerInfluencePanel;
+    private AnalyticsPanel analyticsPanel;
+    private RelationshipNetworkPanel relationshipNetworkPanel;
     private Label turnLabel;
 
     @Override
@@ -67,11 +70,27 @@ public class Main extends Application {
         eventLogPanel = new EventLogPanel(db);
         eventsTab.setContent(eventLogPanel);
 
+        // Analytics Tab
+        Tab analyticsTab = new Tab("📈 Analytics");
+        analyticsPanel = new AnalyticsPanel(db);
+        analyticsTab.setContent(analyticsPanel);
+
+        // Relationship Network Tab (NEW!)
+        Tab networkTab = new Tab("🕸️ Network");
+        relationshipNetworkPanel = new RelationshipNetworkPanel(db);
+        networkTab.setContent(relationshipNetworkPanel);
+
+        // Player Influence Tab
+        Tab playerInfluenceTab = new Tab("🧙 Player Influence");
+        playerInfluencePanel = new PlayerInfluencePanel(db);
+        playerInfluenceTab.setContent(playerInfluencePanel);
+
         // Testing Tab
         Tab testingTab = new Tab("🧪 Testing");
         testingTab.setContent(createTestingPanel());
 
-        tabPane.getTabs().addAll(dashboardTab, factionsTab, eventsTab, testingTab);
+        tabPane.getTabs().addAll(dashboardTab, factionsTab, eventsTab, analyticsTab,
+                networkTab, playerInfluenceTab, testingTab);
 
         root.setCenter(tabPane);
 
@@ -120,10 +139,14 @@ public class Main extends Application {
 
             if (!activeFactions.isEmpty()) {
                 statsArea.appendText("=== FACTION STRENGTH RANKINGS ===\n\n");
-                activeFactions.stream()
+                var sortedFactions = activeFactions.stream()
                         .sorted((f1, f2) -> Integer.compare(f2.getStrength(), f1.getStrength()))
-                        .forEach(f -> statsArea.appendText(String.format("%d. %s - Strength: %d\n",
-                                activeFactions.indexOf(f) + 1, f.getName(), f.getStrength())));
+                        .toList();
+
+                for (int i = 0; i < sortedFactions.size(); i++) {
+                    Faction f = sortedFactions.get(i);
+                    statsArea.appendText(String.format("%d. %s - Strength: %d\n", i + 1, f.getName(), f.getStrength()));
+                }
             }
 
             statsArea.appendText("\n=== RELATIONSHIP BREAKDOWN ===\n\n");
