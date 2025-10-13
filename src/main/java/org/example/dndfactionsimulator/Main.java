@@ -7,17 +7,22 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import org.example.dndfactionsimulator.database.*;
 import org.example.dndfactionsimulator.ui.*;
+import org.example.dndfactionsimulator.simulation.*;
+import org.example.dndfactionsimulator.model.*;
+import java.util.List;
 
 public class Main extends Application {
     private DatabaseManager db;
+    private SimulationEngine simulationEngine;
     private FactionOverviewPanel factionPanel;
     private EventLogPanel eventLogPanel;
     private Label turnLabel;
 
     @Override
     public void start(Stage primaryStage) {
-        // Initialize database
+        // Initialize database and simulation engine
         db = DatabaseManager.getInstance();
+        simulationEngine = new SimulationEngine(db);
 
         // Create main layout
         BorderPane root = new BorderPane();
@@ -48,7 +53,7 @@ public class Main extends Application {
         TabPane tabPane = new TabPane();
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
-        // Dashboard Tab (simple stats for now)
+        // Dashboard Tab
         Tab dashboardTab = new Tab("📊 Dashboard");
         dashboardTab.setContent(createDashboard());
 
@@ -62,7 +67,7 @@ public class Main extends Application {
         eventLogPanel = new EventLogPanel(db);
         eventsTab.setContent(eventLogPanel);
 
-        // Testing Tab (keep old testing features)
+        // Testing Tab
         Tab testingTab = new Tab("🧪 Testing");
         testingTab.setContent(createTestingPanel());
 
@@ -122,7 +127,7 @@ public class Main extends Application {
             }
 
             statsArea.appendText("\n=== RELATIONSHIP BREAKDOWN ===\n\n");
-            for (var type : org.example.dndfactionsimulator.model.RelationshipType.values()) {
+            for (var type : RelationshipType.values()) {
                 long count = relationships.stream()
                         .filter(r -> r.getType() == type)
                         .count();
@@ -159,12 +164,10 @@ public class Main extends Application {
         outputArea.setWrapText(true);
 
         addRandomFactionBtn.setOnAction(e -> {
-            var faction = new org.example.dndfactionsimulator.model.Faction(
+            var faction = new Faction(
                     "Faction " + System.currentTimeMillis() % 1000,
-                    org.example.dndfactionsimulator.model.FactionType.values()[
-                            (int)(Math.random() * org.example.dndfactionsimulator.model.FactionType.values().length)],
-                    org.example.dndfactionsimulator.model.Alignment.values()[
-                            (int)(Math.random() * org.example.dndfactionsimulator.model.Alignment.values().length)]
+                    FactionType.values()[(int)(Math.random() * FactionType.values().length)],
+                    Alignment.values()[(int)(Math.random() * Alignment.values().length)]
             );
 
             if (db.addFaction(faction)) {
@@ -186,8 +189,8 @@ public class Main extends Application {
                 f2 = factions.get((int)(Math.random() * factions.size()));
             }
 
-            var types = org.example.dndfactionsimulator.model.RelationshipType.values();
-            var rel = new org.example.dndfactionsimulator.model.Relationship(
+            var types = RelationshipType.values();
+            var rel = new Relationship(
                     f1.getId(), f2.getId(),
                     types[(int)(Math.random() * types.length)],
                     (int)(Math.random() * 201) - 100
@@ -207,10 +210,10 @@ public class Main extends Application {
             }
 
             var faction = factions.get((int)(Math.random() * factions.size()));
-            var actions = org.example.dndfactionsimulator.model.FactionAction.values();
+            var actions = FactionAction.values();
             var action = actions[(int)(Math.random() * actions.length)];
 
-            var event = new org.example.dndfactionsimulator.model.WorldEvent(
+            var event = new WorldEvent(
                     db.getCurrentTurn(),
                     faction.getId(),
                     action,
@@ -228,16 +231,56 @@ public class Main extends Application {
     }
 
     private void advanceTurn() {
-        if (db.advanceTurn()) {
-            turnLabel.setText("Turn: " + db.getCurrentTurn());
-            eventLogPanel.refreshEvents();
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Turn Advanced");
-            alert.setHeaderText(null);
-            alert.setContentText("Advanced to Turn " + db.getCurrentTurn());
+        // Check if there are active factions
+        var activeFactions = db.getActiveFactions();
+        if (activeFactions.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("No Active Factions");
+            alert.setHeaderText("Cannot Simulate Turn");
+            alert.setContentText("You need at least one active faction to run a simulation.");
             alert.showAndWait();
+            return;
         }
+
+        // Show simulation running dialog
+        Alert simulating = new Alert(Alert.AlertType.INFORMATION);
+        simulating.setTitle("Simulating...");
+        simulating.setHeaderText("Running Turn Simulation");
+        simulating.setContentText("Processing " + activeFactions.size() + " faction actions...");
+        simulating.show();
+
+        // Run the simulation
+        List<WorldEvent> events = simulationEngine.runTurn();
+        simulating.close();
+
+        // Update UI
+        int newTurn = db.getCurrentTurn();
+        turnLabel.setText("Turn: " + newTurn);
+        eventLogPanel.refreshEvents();
+        factionPanel.refreshFactions();
+
+        // Show results
+        Alert results = new Alert(Alert.AlertType.INFORMATION);
+        results.setTitle("Turn Complete!");
+        results.setHeaderText("Turn " + newTurn + " Simulation Complete");
+
+        StringBuilder summary = new StringBuilder();
+        summary.append("Events this turn: ").append(events.size()).append("\n\n");
+        summary.append("Summary:\n");
+
+        for (WorldEvent event : events.stream().limit(5).toList()) {
+            summary.append("• ").append(event.getAction().getDisplayName())
+                    .append(": ").append(event.getDescription().substring(0,
+                            Math.min(60, event.getDescription().length())))
+                    .append("...\n");
+        }
+
+        if (events.size() > 5) {
+            summary.append("\n... and ").append(events.size() - 5).append(" more events.");
+        }
+
+        results.setContentText(summary.toString());
+        results.showAndWait();
     }
 
     private MenuBar createMenuBar() {
