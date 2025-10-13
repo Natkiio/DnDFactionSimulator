@@ -30,8 +30,8 @@ public class EventLogPanel extends VBox {
 
         Label filterLabel = new Label("Filter:");
         filterCombo = new ComboBox<>();
-        filterCombo.getItems().addAll("All Events", "Current Turn", "Last 5 Turns");
-        filterCombo.setValue("All Events");
+        filterCombo.getItems().addAll("All Events", "Last Turn", "Last 5 Turns");
+        filterCombo.setValue("Last Turn");
         filterCombo.setOnAction(e -> refreshEvents());
 
         Button refreshBtn = new Button("🔄 Refresh");
@@ -62,28 +62,37 @@ public class EventLogPanel extends VBox {
         String filter = filterCombo.getValue();
         int currentTurn = db.getCurrentTurn();
 
-        if (filter.equals("Current Turn")) {
+        if (filter.equals("Last Turn")) {
+            // Show events from the most recently completed turn
+            int lastTurn = Math.max(0, currentTurn - 1);
             events = events.stream()
-                    .filter(e -> e.getTurnNumber() == currentTurn)
+                    .filter(e -> e.getTurnNumber() == lastTurn)
                     .toList();
+
+            if (events.isEmpty() && lastTurn == 0) {
+                eventListView.getItems().add("ℹ️ No events yet. Run a simulation first!");
+            }
         } else if (filter.equals("Last 5 Turns")) {
             events = events.stream()
-                    .filter(e -> e.getTurnNumber() >= currentTurn - 5)
+                    .filter(e -> e.getTurnNumber() >= Math.max(0, currentTurn - 5))
                     .toList();
         }
 
-        // Display events
-        for (WorldEvent event : events) {
-            String emoji = getActionEmoji(event.getAction());
-            String eventText = String.format("%s [Turn %d] %s - %s",
-                    emoji,
-                    event.getTurnNumber(),
-                    event.getAction().getDisplayName(),
-                    event.getDescription());
-            eventListView.getItems().add(eventText);
+        // Display events (only if not already showing info message)
+        if (!events.isEmpty()) {
+            for (WorldEvent event : events) {
+                String emoji = getActionEmoji(event.getAction());
+                String eventText = String.format("%s [Turn %d] %s - %s",
+                        emoji,
+                        event.getTurnNumber(),
+                        event.getAction().getDisplayName(),
+                        event.getDescription());
+                eventListView.getItems().add(eventText);
+            }
         }
 
-        statsLabel.setText("Total Events: " + events.size());
+        statsLabel.setText(String.format("Showing %d events | Current Turn: %d",
+                events.size(), currentTurn));
     }
 
     private String getActionEmoji(FactionAction action) {
