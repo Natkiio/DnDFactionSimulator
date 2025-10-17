@@ -17,6 +17,8 @@ A JavaFX desktop application that simulates autonomous faction behavior in a D&D
 
 ## 📸 Screen Shot
 <img width="1199" height="834" alt="Screenshot 2025-10-17 at 13 20 11" src="https://github.com/user-attachments/assets/b89e80c7-a9b1-430e-9a47-2175596e5623" />
+<img width="1199" height="834" alt="Screenshot 2025-10-17 at 13 21 14" src="https://github.com/user-attachments/assets/a6504785-9031-4f3b-8391-5c7ff9fec0a5" />
+
 
 ## 🚀 How to Run
 ```bash
