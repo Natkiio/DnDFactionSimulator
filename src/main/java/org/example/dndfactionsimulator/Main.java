@@ -32,19 +32,19 @@ public class Main extends Application {
 
         // Top bar with title and turn counter
         VBox topBar = new VBox(5);
-        topBar.setStyle("-fx-padding: 10; -fx-background-color: #2c3e50;");
+        topBar.getStyleClass().add("top-bar");
 
         Label titleLabel = new Label("🎲 D&D Faction Simulator");
-        titleLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
+        titleLabel.getStyleClass().add("title-label");
 
         HBox turnBox = new HBox(15);
         turnBox.setStyle("-fx-alignment: center-left;");
 
         turnLabel = new Label("Turn: " + db.getCurrentTurn());
-        turnLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #ecf0f1;");
+        turnLabel.getStyleClass().add("turn-label");
 
         Button advanceTurnBtn = new Button("⏭ Advance Turn");
-        advanceTurnBtn.setStyle("-fx-font-size: 14px;");
+        advanceTurnBtn.getStyleClass().add("advance-turn-button");
         advanceTurnBtn.setOnAction(e -> advanceTurn());
 
         turnBox.getChildren().addAll(turnLabel, advanceTurnBtn);
@@ -75,7 +75,7 @@ public class Main extends Application {
         analyticsPanel = new AnalyticsPanel(db);
         analyticsTab.setContent(analyticsPanel);
 
-        // Relationship Network Tab (NEW!)
+        // Relationship Network Tab
         Tab networkTab = new Tab("🕸️ Network");
         relationshipNetworkPanel = new RelationshipNetworkPanel(db);
         networkTab.setContent(relationshipNetworkPanel);
@@ -99,8 +99,19 @@ public class Main extends Application {
         VBox topContainer = new VBox(menuBar, topBar);
         root.setTop(topContainer);
 
-        // Create and show scene
+        // Create and show scene with medieval theme
         Scene scene = new Scene(root, 1200, 800);
+
+        // Apply medieval CSS theme
+        try {
+            scene.getStylesheets().add(
+                    getClass().getResource("/styles/medieval-theme.css").toExternalForm()
+            );
+            System.out.println("✅ Medieval theme loaded successfully!");
+        } catch (Exception e) {
+            System.err.println("⚠️ Could not load medieval theme: " + e.getMessage());
+        }
+
         primaryStage.setTitle("D&D Faction Simulator");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -110,10 +121,11 @@ public class Main extends Application {
 
     private VBox createDashboard() {
         VBox dashboard = new VBox(20);
+        dashboard.getStyleClass().add("dashboard-panel");
         dashboard.setStyle("-fx-padding: 20; -fx-alignment: center;");
 
         Label header = new Label("📊 World Statistics");
-        header.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+        header.getStyleClass().add("header-label");
 
         TextArea statsArea = new TextArea();
         statsArea.setEditable(false);
@@ -167,10 +179,14 @@ public class Main extends Application {
 
     private VBox createTestingPanel() {
         VBox testPanel = new VBox(15);
+        testPanel.getStyleClass().add("panel-container");
         testPanel.setStyle("-fx-padding: 20; -fx-alignment: center;");
 
         Label header = new Label("🧪 Quick Testing Tools");
-        header.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        header.getStyleClass().add("header-label");
+
+        Label subtitle = new Label("Generate random data for testing");
+        subtitle.getStyleClass().add("subtitle-label");
 
         HBox buttonBox = new HBox(10);
         buttonBox.setStyle("-fx-alignment: center;");
@@ -249,7 +265,7 @@ public class Main extends Application {
             }
         });
 
-        testPanel.getChildren().addAll(header, buttonBox, outputArea);
+        testPanel.getChildren().addAll(header, subtitle, buttonBox, outputArea);
         return testPanel;
     }
 
